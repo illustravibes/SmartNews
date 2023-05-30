@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SmartNews</string>
+    <string name="add_article">Add</string>
+    <string name="upload_image">Upload</string>
+    <string name="article_image">Article Image</string>
+    <string name="main_activity">MainActivity</string>
+</resources>
