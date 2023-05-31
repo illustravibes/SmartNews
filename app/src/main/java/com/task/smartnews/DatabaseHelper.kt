@@ -2,6 +2,9 @@ package com.task.smartnews
 
 import android.content.Context
 import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
@@ -9,7 +12,7 @@ import java.sql.ResultSet
 import java.sql.SQLException
 
 class DatabaseHelper(private val context: Context) {
-    private val host = "192.168.100.11"
+    private val host = "10.113.86.187"
     private val port = "3306"
     private val databaseName = "smartnews"
     private val username = "root" // Replace with your MySQL username
@@ -49,23 +52,25 @@ class DatabaseHelper(private val context: Context) {
     }
 
     fun createArticle(article: Article) {
-        connectToDatabase()
+        GlobalScope.launch(Dispatchers.IO) {
+            connectToDatabase()
 
-        if (isConnected) {
-            val query = "INSERT INTO articles (title, content, image_url) VALUES (?, ?, ?)"
+            if (isConnected) {
+                val query = "INSERT INTO articles (title, content, image_url) VALUES (?, ?, ?)"
 
-            val preparedStatement: PreparedStatement = connection.prepareStatement(query)
-            preparedStatement.setString(1, article.title)
-            preparedStatement.setString(2, article.content)
-            preparedStatement.setString(3, article.imageUrl)
-            preparedStatement.executeUpdate()
+                val preparedStatement: PreparedStatement = connection.prepareStatement(query)
+                preparedStatement.setString(1, article.title)
+                preparedStatement.setString(2, article.content)
+                preparedStatement.setString(3, article.imageUrl)
+                preparedStatement.executeUpdate()
 
-            showToast("Article created successfully")
-        } else {
-            showToast("Failed to create article. Not connected to the database")
+                showToast("Article created successfully")
+            } else {
+                showToast("Failed to create article. Not connected to the database")
+            }
+
+            disconnectFromDatabase()
         }
-
-        disconnectFromDatabase()
     }
 
     fun getArticleById(id: Int): Article? {

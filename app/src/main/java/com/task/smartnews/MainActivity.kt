@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     private fun navigateToAddArticle() {
         val intent = Intent(this, AddEditArticleActivity::class.java)
         startActivity(intent)

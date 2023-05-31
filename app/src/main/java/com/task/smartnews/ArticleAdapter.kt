@@ -36,7 +36,7 @@ class ArticleAdapter(private var articles: List<Article>) : RecyclerView.Adapter
             textContent.text = article.content
 
             // Set the article image if available
-            if (article.imageUrl != null) {
+            if (!article.imageUrl.isNullOrEmpty()) {
                 Picasso.get().load(article.imageUrl).into(imageArticle)
             } else {
                 imageArticle.visibility = View.GONE

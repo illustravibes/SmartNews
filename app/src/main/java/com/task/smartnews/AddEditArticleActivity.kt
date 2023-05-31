@@ -78,6 +78,7 @@ class AddEditArticleActivity : AppCompatActivity() {
         }
     }
 
+
     override fun onDestroy() {
         super.onDestroy()
         databaseHelper.disconnectFromDatabase()
