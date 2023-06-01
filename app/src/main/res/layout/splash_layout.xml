@@ -1,0 +1,28 @@
+<!-- splash_layout.xml -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ocean_blue">
+
+    <TextView
+        android:id="@+id/logoTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SmartNews"
+        android:textColor="@android:color/white"
+        android:fontFamily="@font/opensans_bold"
+        android:textSize="30sp"
+        android:layout_centerInParent="true" />
+
+    <TextView
+        android:id="@+id/taglineTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stay Connected, Stay Informed"
+        android:textColor="@android:color/white"
+        android:fontFamily="@font/opensans_italic"
+        android:textSize="16sp"
+        android:layout_below="@id/logoTextView"
+        android:layout_centerHorizontal="true" />
+
+</RelativeLayout>
