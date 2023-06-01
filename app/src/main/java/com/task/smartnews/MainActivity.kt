@@ -9,11 +9,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(),  ArticleAdapter.OnItemClickListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var articleAdapter: ArticleAdapter
     private lateinit var databaseHelper: DatabaseHelper
     private var articleList: List<Article> = emptyList()
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity() {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
 
         databaseHelper = DatabaseHelper(this)
+        articleAdapter.setOnItemClickListener(this)
 
         swipeRefreshLayout.setOnRefreshListener {
             // Perform database update or refresh operation here
@@ -44,7 +46,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    override fun onItemClick(article: Article) {
+        val intent = Intent(this, ArticleDetailsActivity::class.java)
+        intent.putExtra(ArticleDetailsActivity.EXTRA_ARTICLE, article)
+        startActivity(intent)
+    }
+
 
     private fun loadArticles() {
         try {

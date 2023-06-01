@@ -48,9 +48,15 @@ class ArticleAdapter(private var articles: List<Article>) : RecyclerView.Adapter
                 imageArticle.visibility = View.VISIBLE
             }
 
+        }
+
+        init {
             itemView.setOnClickListener {
-                // Invoke the onItemClick method of the listener and pass the clicked article
-                listener?.onItemClick(article)
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    val clickedArticle = articles[position]
+                    listener?.onItemClick(clickedArticle)
+                }
             }
         }
     }
