@@ -1,169 +1,127 @@
 package com.task.smartnews
 
+import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
 import android.widget.Toast
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.SQLException
 
-class DatabaseHelper(private val context: Context) {
-    private val host = "10.113.86.187"
-    private val port = "3306"
-    private val databaseName = "smartnews"
-    private val username = "root" // Replace with your MySQL username
-    private val password = ""     // Replace with your MySQL password
+class DatabaseHelper(private val context: Context) : SQLiteOpenHelper(
+    context, DATABASE_NAME, null, DATABASE_VERSION
+) {
+    companion object {
+        private const val DATABASE_NAME = "smartnews.db"
+        private const val DATABASE_VERSION = 1
 
-    private lateinit var connection: Connection
-    private var isConnected = false
-
-    fun connectToDatabase() {
-        try {
-            Class.forName("com.mysql.jdbc.Driver")
-            val url = "jdbc:mysql://$host:$port/$databaseName"
-            connection = DriverManager.getConnection(url, username, password)
-            isConnected = true
-            showToast("Connected to the database server")
-        } catch (e: ClassNotFoundException) {
-            e.printStackTrace()
-            isConnected = false
-            showToast("Failed to connect to the database server")
-        } catch (e: SQLException) {
-            e.printStackTrace()
-            isConnected = false
-            showToast("Failed to connect to the database server")
-        }
+        private const val TABLE_ARTICLES = "articles"
+        private const val COLUMN_ID = "id"
+        private const val COLUMN_TITLE = "title"
+        private const val COLUMN_CONTENT = "content"
+        private const val COLUMN_IMAGE_URL = "image_url"
     }
 
-    fun disconnectFromDatabase() {
-        try {
-            if (::connection.isInitialized && !connection.isClosed) {
-                connection.close()
-                isConnected = false
-                showToast("Disconnected from the database server")
-            }
-        } catch (e: SQLException) {
-            e.printStackTrace()
-        }
+    override fun onCreate(db: SQLiteDatabase) {
+        val createTableQuery = "CREATE TABLE $TABLE_ARTICLES (" +
+                "$COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "$COLUMN_TITLE TEXT," +
+                "$COLUMN_CONTENT TEXT," +
+                "$COLUMN_IMAGE_URL TEXT" +
+                ")"
+        db.execSQL(createTableQuery)
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_ARTICLES")
+        onCreate(db)
     }
 
     fun createArticle(article: Article) {
-        GlobalScope.launch(Dispatchers.IO) {
-            connectToDatabase()
+        val db = writableDatabase
+        val values = ContentValues()
+        values.put(COLUMN_TITLE, article.title)
+        values.put(COLUMN_CONTENT, article.content)
+        values.put(COLUMN_IMAGE_URL, article.image_url)
+        val id = db.insert(TABLE_ARTICLES, null, values)
+        db.close()
 
-            if (isConnected) {
-                val query = "INSERT INTO articles (title, content, image_url) VALUES (?, ?, ?)"
-
-                val preparedStatement: PreparedStatement = connection.prepareStatement(query)
-                preparedStatement.setString(1, article.title)
-                preparedStatement.setString(2, article.content)
-                preparedStatement.setString(3, article.imageUrl)
-                preparedStatement.executeUpdate()
-
-                showToast("Article created successfully")
-            } else {
-                showToast("Failed to create article. Not connected to the database")
-            }
-
-            disconnectFromDatabase()
+        if (id != -1L) {
+            showToast("Article created successfully")
+        } else {
+            showToast("Failed to create article")
         }
     }
 
     fun getArticleById(id: Int): Article? {
-        connectToDatabase()
-
-        val query = "SELECT * FROM articles WHERE id = ?"
+        val db = readableDatabase
+        val selection = "$COLUMN_ID = ?"
+        val selectionArgs = arrayOf(id.toString())
+        val cursor = db.query(TABLE_ARTICLES, null, selection, selectionArgs, null, null, null)
 
         var article: Article? = null
-        var preparedStatement: PreparedStatement? = null
-        var resultSet: ResultSet? = null
-
-        try {
-            preparedStatement = connection.prepareStatement(query)
-            preparedStatement.setInt(1, id)
-            resultSet = preparedStatement.executeQuery()
-
-            if (resultSet.next()) {
-                val articleId = resultSet.getInt("id")
-                val title = resultSet.getString("title")
-                val content = resultSet.getString("content")
-                val imageUrl = resultSet.getString("image_url")
-
-                article = Article(articleId, title, content, imageUrl)
-            }
-        } catch (e: SQLException) {
-            e.printStackTrace()
-            showToast("Failed to retrieve article from the database")
-        } finally {
-            resultSet?.close()
-            preparedStatement?.close()
-            disconnectFromDatabase()
+        if (cursor != null && cursor.moveToFirst()) {
+            val title = cursor.getString(cursor.getColumnIndex(COLUMN_TITLE))
+            val content = cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT))
+            val imageUrl = cursor.getString(cursor.getColumnIndex(COLUMN_IMAGE_URL))
+            article = Article(id, title, content, imageUrl)
         }
-
+        cursor?.close()
+        db.close()
         return article
     }
 
-
     fun getAllArticles(): List<Article> {
         val articles = mutableListOf<Article>()
+        val db = readableDatabase
+        val cursor = db.query(TABLE_ARTICLES, null, null, null, null, null, null)
 
-        try {
-            connectToDatabase()
-            val statement = connection.createStatement()
-            val query = "SELECT * FROM articles"
-            val resultSet = statement.executeQuery(query)
-
-            while (resultSet.next()) {
-                val id = resultSet.getInt("id")
-                val title = resultSet.getString("title")
-                val content = resultSet.getString("content")
-                val imageUrl = resultSet.getString("image_url")
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                val id = cursor.getInt(cursor.getColumnIndex(COLUMN_ID))
+                val title = cursor.getString(cursor.getColumnIndex(COLUMN_TITLE))
+                val content = cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT))
+                val imageUrl = cursor.getString(cursor.getColumnIndex(COLUMN_IMAGE_URL))
                 val article = Article(id, title, content, imageUrl)
                 articles.add(article)
-            }
-
-            resultSet.close()
-            statement.close()
-            disconnectFromDatabase()
-        } catch (e: Exception) {
-            e.printStackTrace()
+            } while (cursor.moveToNext())
         }
-
+        cursor?.close()
+        db.close()
         return articles
     }
 
     fun updateArticle(article: Article) {
-        connectToDatabase()
+        val db = writableDatabase
+        val values = ContentValues()
+        values.put(COLUMN_TITLE, article.title)
+        values.put(COLUMN_CONTENT, article.content)
+        val whereClause = "$COLUMN_ID = ?"
+        val whereArgs = arrayOf(article.id.toString())
+        val rowsAffected = db.update(TABLE_ARTICLES, values, whereClause, whereArgs)
+        db.close()
 
-        val query = "UPDATE articles SET title = ?, content = ? WHERE id = ?"
-
-        val preparedStatement: PreparedStatement = connection.prepareStatement(query)
-        preparedStatement.setString(1, article.title)
-        preparedStatement.setString(2, article.content)
-        preparedStatement.setInt(3, article.id)
-        preparedStatement.executeUpdate()
-
-        disconnectFromDatabase()
+        if (rowsAffected > 0) {
+            showToast("Article updated successfully")
+        } else {
+            showToast("Failed to update article")
+        }
     }
 
     fun deleteArticle(article: Article) {
-        connectToDatabase()
+        val db = writableDatabase
+        val whereClause = "$COLUMN_ID = ?"
+        val whereArgs = arrayOf(article.id.toString())
+        val rowsAffected = db.delete(TABLE_ARTICLES, whereClause, whereArgs)
+        db.close()
 
-        val query = "DELETE FROM articles WHERE id = ?"
-
-        val preparedStatement: PreparedStatement = connection.prepareStatement(query)
-        preparedStatement.setInt(1, article.id)
-        preparedStatement.executeUpdate()
-
-        disconnectFromDatabase()
+        if (rowsAffected > 0) {
+            showToast("Article deleted successfully")
+        } else {
+            showToast("Failed to delete article")
+        }
     }
 
     private fun showToast(message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
-
 }

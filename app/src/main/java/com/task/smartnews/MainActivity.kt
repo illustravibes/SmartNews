@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
@@ -22,9 +23,18 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         articleAdapter = ArticleAdapter(articleList)
         recyclerView.adapter = articleAdapter
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
 
         databaseHelper = DatabaseHelper(this)
-        databaseHelper.connectToDatabase()
+
+        swipeRefreshLayout.setOnRefreshListener {
+            // Perform database update or refresh operation here
+            loadArticles()
+
+            // Set refreshing to false when the operation is complete
+            swipeRefreshLayout.isRefreshing = false
+        }
+
 
         loadArticles()
 
@@ -33,6 +43,8 @@ class MainActivity : AppCompatActivity() {
             navigateToAddArticle()
         }
     }
+
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     private fun loadArticles() {
         try {
@@ -44,7 +56,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     private fun navigateToAddArticle() {
         val intent = Intent(this, AddEditArticleActivity::class.java)
         startActivity(intent)
@@ -52,6 +63,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        databaseHelper.disconnectFromDatabase()
+        databaseHelper.close()
     }
 }

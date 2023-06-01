@@ -6,11 +6,14 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.squareup.picasso.Picasso
+
 
 class ArticleAdapter(private var articles: List<Article>) : RecyclerView.Adapter<ArticleAdapter.ArticleViewHolder>() {
 
     private var listener: OnItemClickListener? = null
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ArticleViewHolder {
         val itemView = LayoutInflater.from(parent.context).inflate(R.layout.item_article, parent, false)
@@ -36,10 +39,13 @@ class ArticleAdapter(private var articles: List<Article>) : RecyclerView.Adapter
             textContent.text = article.content
 
             // Set the article image if available
-            if (!article.imageUrl.isNullOrEmpty()) {
-                Picasso.get().load(article.imageUrl).into(imageArticle)
-            } else {
+            if (article.image_url.isNullOrEmpty()) {
+                // Hide the ImageView if image_url is empty or null
                 imageArticle.visibility = View.GONE
+            } else {
+                // Load the image using Picasso library
+                Picasso.get().load(article.image_url).into(imageArticle)
+                imageArticle.visibility = View.VISIBLE
             }
 
             itemView.setOnClickListener {
