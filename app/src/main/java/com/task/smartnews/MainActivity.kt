@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity(), ArticleAdapter.OnItemClickListener {
         try {
             articleList = databaseHelper.getAllArticles()
             articleAdapter.submitList(articleList)
-            articleAdapter.notifyDataSetChanged() // Add this line to refresh the RecyclerView
+            articleAdapter.notifyDataSetChanged()
         } catch (e: DatabaseException) {
             Toast.makeText(this, "Failed to load articles from the database", Toast.LENGTH_SHORT).show()
             e.printStackTrace()
