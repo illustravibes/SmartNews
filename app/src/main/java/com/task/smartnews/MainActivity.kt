@@ -1,5 +1,5 @@
 package com.task.smartnews
-
+import ArticleAdapter
 import android.content.Intent
 import android.net.http.NetworkException
 import android.os.Bundle

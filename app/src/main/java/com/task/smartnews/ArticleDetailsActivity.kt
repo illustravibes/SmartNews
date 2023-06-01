@@ -3,6 +3,7 @@ package com.task.smartnews
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -14,7 +15,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.squareup.picasso.Picasso
 
 class ArticleDetailsActivity : AppCompatActivity() {
     companion object {
@@ -70,13 +70,15 @@ class ArticleDetailsActivity : AppCompatActivity() {
         textViewTitle.text = article.title
         textViewContent.text = article.content
 
-        if (article.imageUri.isNullOrEmpty()) {
-            imageViewArticle.visibility = View.GONE
-        } else {
+        if (article.imageBlob != null) {
+            val bitmap = BitmapFactory.decodeByteArray(article.imageBlob!!, 0, article.imageBlob!!.size)
+            imageViewArticle.setImageBitmap(bitmap)
             imageViewArticle.visibility = View.VISIBLE
-            Picasso.get().load(article.imageUri).into(imageViewArticle)
+        } else {
+            imageViewArticle.visibility = View.GONE
         }
     }
+
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_article_details, menu)

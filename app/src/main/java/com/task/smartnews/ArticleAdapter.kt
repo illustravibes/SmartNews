@@ -1,12 +1,12 @@
-package com.task.smartnews
-
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.squareup.picasso.Picasso
+import com.task.smartnews.R
+import com.task.smartnews.Article
 
 class ArticleAdapter(private var articles: List<Article>) :
     RecyclerView.Adapter<ArticleAdapter.ArticleViewHolder>() {
@@ -38,13 +38,13 @@ class ArticleAdapter(private var articles: List<Article>) :
             textContent.text = article.content
 
             // Set the article image if available
-            if (article.imageUri.isNullOrEmpty()) {
-                // Hide the ImageView if image_url is empty or null
-                imageArticle.visibility = View.GONE
-            } else {
-                // Load the image using Picasso library
-                Picasso.get().load(article.imageUri).into(imageArticle)
+            if (article.imageBlob != null) {
+                val bitmap = BitmapFactory.decodeByteArray(article.imageBlob, 0, article.imageBlob.size)
+                imageArticle.setImageBitmap(bitmap)
                 imageArticle.visibility = View.VISIBLE
+            } else {
+                // Hide the ImageView if imageBlob is null
+                imageArticle.visibility = View.GONE
             }
         }
 

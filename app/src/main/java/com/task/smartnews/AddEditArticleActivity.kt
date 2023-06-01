@@ -5,13 +5,16 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.task.smartnews.databinding.ActivityAddEditArticleBinding
+import java.io.IOException
 
 class AddEditArticleActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAddEditArticleBinding
     private lateinit var databaseHelper: DatabaseHelper
     private var articleId: Int = -1
+    private var selectedImageBytes: ByteArray? = null
 
     companion object {
         private const val REQUEST_IMAGE_PICKER = 100
@@ -49,9 +52,17 @@ class AddEditArticleActivity : AppCompatActivity() {
         if (article != null) {
             binding.editTextTitle.setText(article.title)
             binding.editTextContent.setText(article.content)
-            binding.textViewSelectedImage.text = article.imageUri
+
+            if (article.imageBlob != null) {
+                binding.textViewSelectedImage.text = "Image selected"
+            } else {
+                binding.textViewSelectedImage.text = "No image selected"
+            }
+
+            selectedImageBytes = article.imageBlob
         }
     }
+
 
     private fun saveArticle() {
         val title = binding.editTextTitle.text.toString().trim()
@@ -63,7 +74,13 @@ class AddEditArticleActivity : AppCompatActivity() {
             return
         }
 
-        val article = Article(id = articleId, title = title, content = content, imageUri = imageUri)
+        val article = Article(
+            id = articleId,
+            title = title,
+            content = content,
+            imageBlob = selectedImageBytes
+        )
+
 
         if (articleId != -1) {
             databaseHelper.updateArticle(article)
@@ -76,11 +93,25 @@ class AddEditArticleActivity : AppCompatActivity() {
         finish()
     }
 
+    private val imagePickerLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri != null) {
+                try {
+                    val inputStream = contentResolver.openInputStream(uri)
+                    selectedImageBytes = inputStream?.readBytes()
+                    inputStream?.close()
+                    binding.textViewSelectedImage.text = uri.toString()
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "Failed to read image", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
     private fun openImagePicker() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        intent.type = "image/*"
-        startActivityForResult(intent, REQUEST_IMAGE_PICKER)
+        imagePickerLauncher.launch("image/*")
     }
+
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)

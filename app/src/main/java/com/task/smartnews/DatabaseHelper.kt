@@ -15,13 +15,14 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         private const val COLUMN_ID = "id"
         private const val COLUMN_TITLE = "title"
         private const val COLUMN_CONTENT = "content"
-        private const val COLUMN_IMAGE_URI = "image_uri"
+
+        private const val COLUMN_IMAGE_BLOB = "image_blob"
 
         private const val CREATE_TABLE_QUERY = "CREATE TABLE $TABLE_ARTICLES (" +
                 "$COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "$COLUMN_TITLE TEXT," +
                 "$COLUMN_CONTENT TEXT," +
-                "$COLUMN_IMAGE_URI TEXT" +
+                "$COLUMN_IMAGE_BLOB BLOB" +
                 ")"
 
     }
@@ -39,13 +40,14 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         val values = ContentValues().apply {
             put(COLUMN_TITLE, article.title)
             put(COLUMN_CONTENT, article.content)
-            put(COLUMN_IMAGE_URI, article.imageUri)
+            put(COLUMN_IMAGE_BLOB, article.imageBlob)
         }
 
         return writableDatabase.use { db ->
             db.insert(TABLE_ARTICLES, null, values)
         }
     }
+
 
     fun getArticleById(id: Int): Article? {
         val selection = "$COLUMN_ID = ?"
@@ -56,8 +58,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 if (cursor.moveToFirst()) {
                     val title = cursor.getString(cursor.getColumnIndex(COLUMN_TITLE))
                     val content = cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT))
-                    val imageUri = cursor.getString(cursor.getColumnIndex(COLUMN_IMAGE_URI))
-                    return Article(id, title, content, imageUri)
+                    val imageBlob = cursor.getBlob(cursor.getColumnIndex(COLUMN_IMAGE_BLOB))
+                    return Article(id, title, content, imageBlob)
                 }
             }
         }
@@ -74,8 +76,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                     val id = cursor.getInt(cursor.getColumnIndex(COLUMN_ID))
                     val title = cursor.getString(cursor.getColumnIndex(COLUMN_TITLE))
                     val content = cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT))
-                    val imageUri = cursor.getString(cursor.getColumnIndex(COLUMN_IMAGE_URI))
-                    articles.add(Article(id, title, content, imageUri))
+                    val imageBlob = cursor.getBlob(cursor.getColumnIndex(COLUMN_IMAGE_BLOB))
+                    articles.add(Article(id, title, content, imageBlob))
                 }
             }
         }
@@ -87,7 +89,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         val values = ContentValues().apply {
             put(COLUMN_TITLE, article.title)
             put(COLUMN_CONTENT, article.content)
-            put(COLUMN_IMAGE_URI, article.imageUri)
+            put(COLUMN_IMAGE_BLOB, article.imageBlob)
         }
 
         val whereClause = "$COLUMN_ID = ?"

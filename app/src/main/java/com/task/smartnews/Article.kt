@@ -8,5 +8,5 @@ data class Article(
     val id: Int,
     val title: String,
     val content: String,
-    val imageUri: String,
+    val imageBlob: ByteArray?
 ) : Parcelable
