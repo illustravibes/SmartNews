@@ -1,84 +1,99 @@
 package com.task.smartnews
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.task.smartnews.databinding.ActivityAddEditArticleBinding
 
 class AddEditArticleActivity : AppCompatActivity() {
-    private lateinit var titleEditText: EditText
-    private lateinit var contentEditText: EditText
-    private lateinit var imageUrlEditText: EditText
-    private lateinit var saveButton: Button
-
+    private lateinit var binding: ActivityAddEditArticleBinding
     private lateinit var databaseHelper: DatabaseHelper
+    private var articleId: Int = -1
 
-    private var isEditMode: Boolean = false
-    private var editedArticle: Article? = null
+    companion object {
+        private const val REQUEST_IMAGE_PICKER = 100
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_add_edit_article)
-
-        titleEditText = findViewById(R.id.editTextTitle)
-        contentEditText = findViewById(R.id.editTextContent)
-        imageUrlEditText = findViewById(R.id.editTextImageUrl)
-        saveButton = findViewById(R.id.buttonSave)
+        binding = ActivityAddEditArticleBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         databaseHelper = DatabaseHelper(this)
 
-        isEditMode = intent.getBooleanExtra("editMode", false)
-        if (isEditMode) {
-            title = "Edit Article"
-            editedArticle = intent.getSerializableExtra("article") as? Article
-            populateFieldsWithArticleData()
-        } else {
-            title = "Add Article"
+        val extras = intent.extras
+        if (extras != null) {
+            articleId = extras.getInt("ARTICLE_ID", -1)
+            if (articleId != -1) {
+                supportActionBar?.title = "Edit Article"
+                loadArticle()
+            } else {
+                supportActionBar?.title = "Add Article"
+            }
         }
 
-        saveButton.setOnClickListener {
+        binding.buttonSave.setOnClickListener {
             saveArticle()
+        }
+
+        binding.buttonUploadImage.setOnClickListener {
+            openImagePicker()
         }
     }
 
-    private fun populateFieldsWithArticleData() {
-        editedArticle?.let {
-            titleEditText.setText(it.title)
-            contentEditText.setText(it.content)
-            imageUrlEditText.setText(it.image_url)
+    private fun loadArticle() {
+        val article = databaseHelper.getArticleById(articleId)
+        if (article != null) {
+            binding.editTextTitle.setText(article.title)
+            binding.editTextContent.setText(article.content)
+            binding.textViewSelectedImage.text = article.imageUri
         }
     }
 
     private fun saveArticle() {
-        val title = titleEditText.text.toString().trim()
-        val content = contentEditText.text.toString().trim()
-        val image_url = imageUrlEditText.text.toString().trim()
+        val title = binding.editTextTitle.text.toString().trim()
+        val content = binding.editTextContent.text.toString().trim()
+        val imageUri = binding.textViewSelectedImage.text.toString().trim()
 
         if (title.isEmpty() || content.isEmpty()) {
-            showToast("Title and content cannot be empty")
+            Toast.makeText(this, "Please enter title and content", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val article = Article(
-            id = editedArticle?.id ?: 0,
-            title = title,
-            content = content,
-            image_url = image_url
-        )
+        val article = Article(id = articleId, title = title, content = content, imageUri = imageUri)
 
-        if (isEditMode) {
+        if (articleId != -1) {
             databaseHelper.updateArticle(article)
-            showToast("Article updated successfully")
+            Toast.makeText(this, "Article updated successfully", Toast.LENGTH_SHORT).show()
         } else {
             databaseHelper.createArticle(article)
-            showToast("Article created successfully")
+            Toast.makeText(this, "Article saved successfully", Toast.LENGTH_SHORT).show()
         }
 
         finish()
     }
 
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    private fun openImagePicker() {
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        intent.type = "image/*"
+        startActivityForResult(intent, REQUEST_IMAGE_PICKER)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_IMAGE_PICKER && resultCode == Activity.RESULT_OK) {
+            val imageUri = data?.data
+            if (imageUri != null) {
+                binding.textViewSelectedImage.text = imageUri.toString()
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        databaseHelper.close()
     }
 }
